@@ -74,6 +74,16 @@ if ( typeof Object.create !== "function" ) {
 			if(base.$elem.children().length === 0){return false}
 			base.baseClass();
 			base.eventTypes();
+			
+			if(base.options.infinite){
+				base.$origUserItems = base.$elem.children();
+				
+				var numberOfTimesToDuplicateChildren = 1 + (base.options.items + (base.options.minimumBleed * 2)) / base.$origUserItems.length;
+				for(var a=0; a<numberOfTimesToDuplicateChildren; a++){
+					base.$origUserItems.clone().appendTo(base.$elem);
+				}
+			}
+			
 			base.$userItems = base.$elem.children();
 			base.itemsAmount = base.$userItems.length;
 			base.wrapItems();
@@ -90,6 +100,9 @@ if ( typeof Object.create !== "function" ) {
 			var base = this;
 			base.updateItems();
 			base.calculateAll();
+			
+
+			
 			base.buildControls();
 			base.updateControls();
 			base.response();
@@ -116,6 +129,10 @@ if ( typeof Object.create !== "function" ) {
 			base.eachMoveUpdate();
 			if (typeof base.options.afterInit === "function") {
 				base.options.afterInit.apply(this,[base.$elem]);
+			}
+			
+			if(base.options.infinite){
+				base.normalizeCurrentPosition();
 			}
 		},
 
@@ -180,6 +197,9 @@ if ( typeof Object.create !== "function" ) {
 
 		wrapItems : function(){
 			var base = this;
+			
+
+			
 			base.$userItems.wrapAll("<div class=\"owl-wrapper\">").wrap("<div class=\"owl-item\"></div>");
 			base.$elem.find(".owl-wrapper").wrap("<div class=\"owl-wrapper-outer\">");
 			base.wrapperOuter = base.$elem.find(".owl-wrapper-outer");
@@ -484,6 +504,11 @@ if ( typeof Object.create !== "function" ) {
 			if(base.options.navigation === false){
 				return false;
 			}
+			
+			if(base.options.infinite){
+				return false;
+			}
+			
 			if(base.options.rewindNav === false){
 				if(base.currentItem === 0 && base.maximumItem === 0){
 					base.buttonPrev.addClass("disabled");
@@ -579,11 +604,15 @@ if ( typeof Object.create !== "function" ) {
 			if(typeof base.options.beforeMove === "function") {
 				base.options.beforeMove.apply(this,[base.$elem]);
 			}
-			if(position >= base.maximumItem){
-				position = base.maximumItem;
-			}
-			else if( position <= 0 ){
-				position = 0;
+			if(base.options.infinite && false){
+				position = base.normalizePosition(position);
+			}else{
+				if(position >= base.maximumItem){
+					position = base.maximumItem;
+				}
+				else if( position <= 0 ){
+					position = 0;
+				}
 			}
 
 			base.currentItem = base.owl.currentItem = position;
@@ -607,31 +636,34 @@ if ( typeof Object.create !== "function" ) {
 					base.swapSpeed("paginationSpeed");
 					setTimeout(function() {
 						base.isCss3Finish = true;
+						base.afterGo();
 					}, base.options.paginationSpeed);
 
 				} else if(speed === "rewind" ){
 					base.swapSpeed(base.options.rewindSpeed);
 					setTimeout(function() {
 						base.isCss3Finish = true;
+						base.afterGo();
 					}, base.options.rewindSpeed);
 
 				} else {
 					base.swapSpeed("slideSpeed");
 					setTimeout(function() {
 						base.isCss3Finish = true;
+						base.afterGo();
 					}, base.options.slideSpeed);
 				}
 				base.transition3d(goToPixel);
 			} else {
 				if(speed === true){
-					base.css2slide(goToPixel, base.options.paginationSpeed);
+					base.css2slide(goToPixel, base.options.paginationSpeed, base.afterGo);
 				} else if(speed === "rewind" ){
-					base.css2slide(goToPixel, base.options.rewindSpeed);
+					base.css2slide(goToPixel, base.options.rewindSpeed, base.afterGo);
 				} else {
-					base.css2slide(goToPixel, base.options.slideSpeed);
+					base.css2slide(goToPixel, base.options.slideSpeed, base.afterGo);
 				}
+				base.afterGo();
 			}
-			base.afterGo();
 		},
 
 		getPrevItem : function(){
@@ -640,17 +672,21 @@ if ( typeof Object.create !== "function" ) {
 			base.storePrevItem = undefined;
 		},
 
-		jumpTo : function(position){
+		jumpTo : function(position, jumpOnly){
 			var base = this;
 			base.getPrevItem();
 			if(typeof base.options.beforeMove === "function") {
 				base.options.beforeMove.apply(this,[base.$elem]);
 			}
-			if(position >= base.maximumItem || position === -1){
-				position = base.maximumItem;
-			}
-			else if( position <= 0 ){
-				position = 0;
+			if(base.options.infinite){
+				position = base.normalizePosition(position);
+			}else{
+				if(position >= base.maximumItem || position === -1){
+					position = base.maximumItem;
+				}
+				else if( position <= 0 ){
+					position = 0;
+				}
 			}
 			base.swapSpeed(0)
 			if(base.browser.support3d === true){
@@ -659,14 +695,44 @@ if ( typeof Object.create !== "function" ) {
 				base.css2slide(base.positionsInArray[position],1);
 			}
 			base.currentItem = base.owl.currentItem = position;
-			base.afterGo();
+			
+			if(!jumpOnly){
+				base.afterGo();
+			}
 		},
 
+		normalizeCurrentPosition: function() {
+			var base = this;
+			
+			//only relevant if owl is in infinity mode
+			if(!base.options.infinite){
+				return;
+			}
+
+			var normalizedItem = base.normalizePosition(base.currentItem);
+			
+			if(base.currentItem != normalizedItem){
+				base.jumpTo(normalizedItem, true);
+			}
+		},
+		
+		normalizePosition: function(position){
+			var base = this;
+			
+			var totalItems = base.$origUserItems.length;
+			
+			return (position % totalItems) + totalItems;
+		},
+		
 		afterGo : function(){
 			var base = this;
 			base.checkPagination();
 			base.checkNavigation();
 			base.eachMoveUpdate();
+			
+			if(base.options.infinite){
+				base.normalizeCurrentPosition();
+			}
 
 			if(typeof base.options.afterMove === "function") {
 				base.options.afterMove.apply(this,[base.$elem]);
@@ -751,7 +817,7 @@ if ( typeof Object.create !== "function" ) {
 			base.$owlWrapper.css({"left" : value})
 		},
 
-		css2slide : function(value,speed){
+		css2slide : function(value,speed, callback){
 			var base = this;
 
 			base.isCssFinish = false;
@@ -761,8 +827,15 @@ if ( typeof Object.create !== "function" ) {
 				duration : speed || base.options.slideSpeed ,
 				complete : function(){
 					base.isCssFinish = true;
+					
+					if(typeof callback == 'function'){
+						callback.apply(base, []);
+					}
+					
 				}
 			});
+			
+
 		},
 
 		checkBrowser : function(){
@@ -1412,7 +1485,10 @@ if ( typeof Object.create !== "function" ) {
 		beforeMove 				: false,
 		afterMove 				: false,
 		afterAction 			: false,
-		startDragging 			: false
+		startDragging 			: false,
+		
+		infinity				: 0,
+		minimumBleed			: 1
 		
 	};
 })( jQuery, window, document );
