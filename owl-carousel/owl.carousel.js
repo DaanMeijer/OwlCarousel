@@ -597,13 +597,6 @@ if ( typeof Object.create !== "function" ) {
 		goTo : function(position,speed,drag){
 			var base = this;
 			
-
-			if(position >= base.maximumItem){
-				position = base.maximumItem;
-			}
-			else if( position <= 0 ){
-				position = 0;
-			}
 			
 			
 			if(base.isTransition){
@@ -615,6 +608,13 @@ if ( typeof Object.create !== "function" ) {
 			
 			if(typeof base.options.beforeMove === "function") {
 				base.options.beforeMove.apply(this,[base.$elem]);
+			}
+
+			if(position >= base.maximumItem){
+				position = base.maximumItem;
+			}
+			else if( position <= 0 ){
+				position = 0;
 			}
 
 			base.currentItem = base.owl.currentItem = position;
