@@ -596,23 +596,25 @@ if ( typeof Object.create !== "function" ) {
 
 		goTo : function(position,speed,drag){
 			var base = this;
+			
 
+			if(position >= base.maximumItem){
+				position = base.maximumItem;
+			}
+			else if( position <= 0 ){
+				position = 0;
+			}
+			
+			
 			if(base.isTransition){
 				return false;
 			}
 			base.getPrevItem();
+
+
+			
 			if(typeof base.options.beforeMove === "function") {
 				base.options.beforeMove.apply(this,[base.$elem]);
-			}
-			if(base.options.infinite && false){
-				position = base.normalizePosition(position);
-			}else{
-				if(position >= base.maximumItem){
-					position = base.maximumItem;
-				}
-				else if( position <= 0 ){
-					position = 0;
-				}
 			}
 
 			base.currentItem = base.owl.currentItem = position;
