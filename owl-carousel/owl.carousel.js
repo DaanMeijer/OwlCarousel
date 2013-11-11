@@ -62,7 +62,7 @@ if ( typeof Object.create !== "function" ) {
 			var base = this;
 
 			base.$elem.css({opacity: 0});
-			base.orignalItems = base.options.items;
+			base.originalItems = base.options.items;
 			base.checkBrowser();
 			base.wrapperWidth = 0;
 			base.checkVisible;
@@ -209,7 +209,7 @@ if ( typeof Object.create !== "function" ) {
 				return false;
 			}
 			if(base.options.singleItem === true){
-				base.options.items = base.orignalItems = 1;
+				base.options.items = base.originalItems = 1;
 				base.options.itemsDesktop = false;
 				base.options.itemsDesktopSmall = false;
 				base.options.itemsTablet = false;
@@ -220,8 +220,8 @@ if ( typeof Object.create !== "function" ) {
 
 			var width = $(base.options.responsiveBaseWidth).width();
 
-			if(width > (base.options.itemsDesktop[0] || base.orignalItems) ){
-				 base.options.items = base.orignalItems
+			if(width > (base.options.itemsDesktop[0] || base.originalItems) ){
+				 base.options.items = base.originalItems
 			}
 
 			if(width <= base.options.itemsDesktop[0] && base.options.itemsDesktop !== false){
